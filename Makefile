@@ -10,10 +10,10 @@ LANGUAGE=c
 
 default: $(EXE)
 
-main.o: main.c computeQ.cc parboil.h
+main.o: main.c computeQ.cc parboil.h 
 	$(CC) -c main.c
 
-computeQ2.o: computeQ2.cu
+computeQ2.o: computeQ2.cu support.cu support.h
 	$(NCC) -c $<
 
 parboil.o: parboil.c parboil.h

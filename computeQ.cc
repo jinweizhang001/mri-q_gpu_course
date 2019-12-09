@@ -4,7 +4,7 @@
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
- ***************************************************************************/
+***************************************************************************/
 
 #define PI   3.1415926535897932384626433832795029f
 #define PIx2 6.2831853071795864769252867665590058f
@@ -19,18 +19,18 @@ struct kValues {
   float PhiMag;
 };
 
-// inline
-// void 
-// ComputePhiMagCPU(int numK, 
-//                  float* phiR, float* phiI,
-//                  float* __restrict__ phiMag) {
-//   int indexK = 0;
-//   for (indexK = 0; indexK < numK; indexK++) {
-//     float real = phiR[indexK];
-//     float imag = phiI[indexK];
-//     phiMag[indexK] = real*real + imag*imag;
-//   }
-// }
+inline
+void 
+ComputePhiMagCPU(int numK, 
+                 float* phiR, float* phiI,
+                 float* __restrict__ phiMag) {
+  int indexK = 0;
+  for (indexK = 0; indexK < numK; indexK++) {
+    float real = phiR[indexK];
+    float imag = phiI[indexK];
+    phiMag[indexK] = real*real + imag*imag;
+  }
+}
 
 inline
 void
