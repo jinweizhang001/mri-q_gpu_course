@@ -100,8 +100,8 @@ main (int argc, char *argv[]) {
   createDataStructsCPU(numK, numX, &phiMag, &Qr, &Qi);
 
   pb_SwitchToTimer(&timer2, pb_TimerID_COMPUTE);
-  ComputePhiMagCPU(numK, phiR, phiI, phiMag);
-  //ComputePhiMag_GPU(numK, phiR, phiI, phiMag);
+  //ComputePhiMagCPU(numK, phiR, phiI, phiMag);
+  ComputePhiMag_GPU(numK, phiR, phiI, phiMag);
   pb_SwitchToTimer(&timer2, pb_TimerID_NONE);
   pb_PrintTimerSet(&timer2);
 
