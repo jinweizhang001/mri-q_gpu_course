@@ -32,9 +32,12 @@
 #include <malloc.h>
 
 #include "parboil.h"
-
+#include "support.h"
 #include "file.h"
 #include "computeQ.cc"
+//#include "computeQ2.cu"
+void ComputePhiMag_GPU(int, float*, float*, float* __restrict__);
+
 
 int
 main (int argc, char *argv[]) {
@@ -48,9 +51,10 @@ main (int argc, char *argv[]) {
   struct kValues* kVals;
 
   struct pb_Parameters *params;
-  struct pb_TimerSet timers;
+  struct pb_TimerSet timers, timer2;
 
   pb_InitializeTimerSet(&timers);
+  pb_InitializeTimerSet(&timer2);
 
   /* Read command line */
   params = pb_ReadParameters(&argc, argv);
@@ -95,7 +99,13 @@ main (int argc, char *argv[]) {
   /* Create CPU data structures */
   createDataStructsCPU(numK, numX, &phiMag, &Qr, &Qi);
 
+  pb_SwitchToTimer(&timer2, pb_TimerID_COMPUTE);
   ComputePhiMagCPU(numK, phiR, phiI, phiMag);
+  //ComputePhiMag_GPU(numK, phiR, phiI, phiMag);
+  pb_SwitchToTimer(&timer2, pb_TimerID_NONE);
+  pb_PrintTimerSet(&timer2);
+
+  pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 
   kVals = (struct kValues*)calloc(numK, sizeof (struct kValues));
   int k;
