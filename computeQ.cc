@@ -19,18 +19,18 @@ struct kValues {
   float PhiMag;
 };
 
-inline
-void 
-ComputePhiMagCPU(int numK, 
-                 float* phiR, float* phiI,
-                 float* __restrict__ phiMag) {
-  int indexK = 0;
-  for (indexK = 0; indexK < numK; indexK++) {
-    float real = phiR[indexK];
-    float imag = phiI[indexK];
-    phiMag[indexK] = real*real + imag*imag;
-  }
-}
+// inline
+// void 
+// ComputePhiMagCPU(int numK, 
+//                  float* phiR, float* phiI,
+//                  float* __restrict__ phiMag) {
+//   int indexK = 0;
+//   for (indexK = 0; indexK < numK; indexK++) {
+//     float real = phiR[indexK];
+//     float imag = phiI[indexK];
+//     phiMag[indexK] = real*real + imag*imag;
+//   }
+// }
 
 inline
 void

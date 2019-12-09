@@ -35,6 +35,9 @@
 
 #include "file.h"
 #include "computeQ.cc"
+//#include "computeQ2.cu"
+void ComputePhiMagCPU(int, float*, float*, float* __restrict__);
+
 
 int
 main (int argc, char *argv[]) {
