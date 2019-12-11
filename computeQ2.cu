@@ -91,3 +91,101 @@ extern "C" void ComputePhiMag_GPU(int numK, float* phiR, float* phiI,
 
 }
 
+
+
+__global__ void cmpQ(int numK, int numX, struct kValues *kVals, 
+  float* gx, float* gy, float* gz, 
+  float* Qr, float* Qi) {
+
+  // __shared__ float ds_kVals[sizeof(kVals)];
+
+  float expArg;
+  float cosArg;
+  float sinArg;
+  // find the index of voxel assigned to this thread
+  //threadIdx.x + blockDim.x * blockIdx.x;
+  int n = blockIdx.x * blockDim.x + threadIdx.x;
+
+  // register allocate voxel inputs and outputs
+  if(n < numX) {
+    float x = gx[n];
+    float y = gy[n];
+    float z = gz[n];
+    float Qracc = 0.0f;
+    float Qiacc = 0.0f;
+    // m is indexK
+    for(int m = 0; m < numK; m++) {
+      // better to store sample data kVals[] in constant memory
+      expArg = PIx2 * (kVals[m].Kx * x +
+                    kVals[m].Ky * y +
+                    kVals[m].Kz * z);
+
+      cosArg = cosf(expArg);
+      sinArg = sinf(expArg);
+      float phi = kVals[m].PhiMag;
+      Qracc += phi * cosArg;
+      Qiacc += phi * sinArg;
+
+    }
+    __syncthreads();
+    Qr[n] = Qracc;
+    Qi[n] = Qiacc;
+  }
+}
+
+extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals, 
+  float* x, float* y, float* z, 
+  float* Qr, float* Qi) {
+
+  int blk_num;
+  const unsigned int blksize = 1024;
+  blk_num = (numX - 1)/blksize + 1;
+  float *x_d, *y_d, *z_d;
+  float* Qr_d; 
+  float* Qi_d;
+  struct kValues *kVals_d;
+  Timer timer;
+
+  startTime(&timer);
+  // Allocate device variables ----------------------------------------------
+  printf("Allocating device variables...\n"); fflush(stdout);
+  cudaMalloc((void**) &x_d, sizeof(float)*numX   );
+  cudaMalloc((void**) &y_d, sizeof(float)*numX   );
+  cudaMalloc((void**) &z_d, sizeof(float)*numX   );
+  cudaMalloc((void**) &kVals_d, sizeof(struct kValues)*numK   );
+  cudaMalloc((void**) &Qr_d, sizeof(float)*numX   );
+  cudaMalloc((void**) &Qi_d, sizeof(float)*numX   );
+
+  cudaDeviceSynchronize();
+  // Copy host variables to device
+  printf("Copying data from host to device...\n"); fflush(stdout);
+  cudaMemcpy(x_d, x, sizeof(float)*numX, cudaMemcpyHostToDevice   );
+  cudaMemcpy(y_d, y, sizeof(float)*numX, cudaMemcpyHostToDevice   );
+  cudaMemcpy(z_d, z, sizeof(float)*numX, cudaMemcpyHostToDevice   );
+  cudaMemcpy(kVals_d, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
+
+  cudaDeviceSynchronize();
+  stopTime(&timer); printf("Coping data time: %f s\n", elapsedTime(timer)); 
+
+  // Launch a kernel
+  printf("Launching kernel...\n"); fflush(stdout);
+  startTime(&timer);
+  cmpQ <<<blk_num, blksize>>> (numK, numX, kVals_d, x_d, y_d, z_d, Qr_d, Qi_d);
+  cudaDeviceSynchronize();
+  stopTime(&timer); printf("ComputeQ_GPU: %f s\n", elapsedTime(timer));  
+
+  // Copy device variables to host
+  cudaMemcpy(Qr, Qr_d, sizeof(float)*numX, cudaMemcpyDeviceToHost   );
+  cudaMemcpy(Qi, Qi_d, sizeof(float)*numX, cudaMemcpyDeviceToHost   );
+  cudaDeviceSynchronize();
+
+  // Free memory
+  cudaFree(x_d);
+  cudaFree(y_d);
+  cudaFree(z_d);
+  cudaFree(kVals_d);
+  cudaFree(Qr_d);
+  cudaFree(Qi_d);
+
+
+}

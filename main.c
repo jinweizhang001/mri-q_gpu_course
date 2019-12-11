@@ -37,7 +37,8 @@
 #include "computeQ.cc"
 //#include "computeQ2.cu"
 void ComputePhiMag_GPU(int, float*, float*, float* __restrict__);
-
+void ComputeQ_GPU(int, int, struct kValues *, 
+float*, float*, float*, float *__restrict__, float *__restrict__);
 
 int
 main (int argc, char *argv[]) {
@@ -99,9 +100,12 @@ main (int argc, char *argv[]) {
   /* Create CPU data structures */
   createDataStructsCPU(numK, numX, &phiMag, &Qr, &Qi);
 
+  printf("\nCompute PhiMag time:\n");
   pb_SwitchToTimer(&timer2, pb_TimerID_COMPUTE);
+
   //ComputePhiMagCPU(numK, phiR, phiI, phiMag);
   ComputePhiMag_GPU(numK, phiR, phiI, phiMag);
+
   pb_SwitchToTimer(&timer2, pb_TimerID_NONE);
   pb_PrintTimerSet(&timer2);
 
@@ -115,7 +119,15 @@ main (int argc, char *argv[]) {
     kVals[k].Kz = kz[k];
     kVals[k].PhiMag = phiMag[k];
   }
-  ComputeQCPU(numK, numX, kVals, x, y, z, Qr, Qi);
+
+  printf("\nCompute Q time:\n");
+  pb_SwitchToTimer(&timer2, pb_TimerID_COMPUTE);
+
+  //ComputeQCPU(numK, numX, kVals, x, y, z, Qr, Qi);
+  ComputeQ_GPU(numK, numX, kVals, x, y, z, Qr, Qi);
+
+  pb_SwitchToTimer(&timer2, pb_TimerID_NONE);
+  pb_PrintTimerSet(&timer2);
 
   if (params->outFile)
     {
@@ -138,6 +150,7 @@ main (int argc, char *argv[]) {
   free (Qr);
   free (Qi);
 
+  printf("\n");
   pb_SwitchToTimer(&timers, pb_TimerID_NONE);
   pb_PrintTimerSet(&timers);
   pb_FreeParameters(params);
