@@ -30,26 +30,26 @@ void inputData(char* fName, int* _numK, int* _numX,
       fprintf(stderr, "Cannot open input file\n");
       exit(-1);
     }
-  fread (&numK, sizeof (int), 1, fid);
+  if(fread (&numK, sizeof (int), 1, fid) != 1 ) printf("error in file.cc fread!\n");
   *_numK = numK;
-  fread (&numX, sizeof (int), 1, fid);
+  if(fread (&numX, sizeof (int), 1, fid) != 1 ) printf("error in file.cc fread!\n");
   *_numX = numX;
   *kx = (float *) memalign(16, numK * sizeof (float));
-  fread (*kx, sizeof (float), numK, fid);
+  if(fread (*kx, sizeof (float), numK, fid) != numK ) printf("error in file.cc fread!\n");
   *ky = (float *) memalign(16, numK * sizeof (float));
-  fread (*ky, sizeof (float), numK, fid);
+  if(fread (*ky, sizeof (float), numK, fid) != numK ) printf("error in file.cc fread!\n");
   *kz = (float *) memalign(16, numK * sizeof (float));
-  fread (*kz, sizeof (float), numK, fid);
+  if(fread (*kz, sizeof (float), numK, fid) != numK ) printf("error in file.cc fread!\n");
   *x = (float *) memalign(16, numX * sizeof (float));
-  fread (*x, sizeof (float), numX, fid);
+  if(fread (*x, sizeof (float), numX, fid) != numX ) printf("error in file.cc fread!\n");
   *y = (float *) memalign(16, numX * sizeof (float));
-  fread (*y, sizeof (float), numX, fid);
+  if(fread (*y, sizeof (float), numX, fid) != numX ) printf("error in file.cc fread!\n");
   *z = (float *) memalign(16, numX * sizeof (float));
-  fread (*z, sizeof (float), numX, fid);
+  if(fread (*z, sizeof (float), numX, fid) != numX ) printf("error in file.cc fread!\n");
   *phiR = (float *) memalign(16, numK * sizeof (float));
-  fread (*phiR, sizeof (float), numK, fid);
+  if(fread (*phiR, sizeof (float), numK, fid) != numK ) printf("error in file.cc fread!\n");
   *phiI = (float *) memalign(16, numK * sizeof (float));
-  fread (*phiI, sizeof (float), numK, fid);
+  if(fread (*phiI, sizeof (float), numK, fid) != numK ) printf("error in file.cc fread!\n");
   fclose (fid); 
 }
 
