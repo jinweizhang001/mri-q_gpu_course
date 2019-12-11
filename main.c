@@ -52,10 +52,11 @@ main (int argc, char *argv[]) {
   struct kValues* kVals;
 
   struct pb_Parameters *params;
-  struct pb_TimerSet timers, timer2;
+  struct pb_TimerSet timers, timer2, timer3;
 
   pb_InitializeTimerSet(&timers);
   pb_InitializeTimerSet(&timer2);
+  pb_InitializeTimerSet(&timer3);
 
   /* Read command line */
   params = pb_ReadParameters(&argc, argv);
@@ -121,13 +122,13 @@ main (int argc, char *argv[]) {
   }
 
   printf("\nCompute Q time:\n");
-  pb_SwitchToTimer(&timer2, pb_TimerID_COMPUTE);
+  pb_SwitchToTimer(&timer3, pb_TimerID_COMPUTE);
 
   //ComputeQCPU(numK, numX, kVals, x, y, z, Qr, Qi);
   ComputeQ_GPU(numK, numX, kVals, x, y, z, Qr, Qi);
 
-  pb_SwitchToTimer(&timer2, pb_TimerID_NONE);
-  pb_PrintTimerSet(&timer2);
+  pb_SwitchToTimer(&timer3, pb_TimerID_NONE);
+  pb_PrintTimerSet(&timer3);
 
   if (params->outFile)
     {

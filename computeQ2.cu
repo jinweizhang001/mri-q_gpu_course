@@ -95,7 +95,7 @@ extern "C" void ComputePhiMag_GPU(int numK, float* phiR, float* phiI,
 
 __global__ void cmpQ(int numK, int numX, struct kValues *kVals, 
   float* gx, float* gy, float* gz, 
-  float* Qr, float* Qi) {
+  float *__restrict__ Qr, float *__restrict__ Qi) {
 
   // __shared__ float ds_kVals[sizeof(kVals)];
 
@@ -135,14 +135,14 @@ __global__ void cmpQ(int numK, int numX, struct kValues *kVals,
 
 extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals, 
   float* x, float* y, float* z, 
-  float* Qr, float* Qi) {
+  float *__restrict__ Qr, float *__restrict__ Qi) {
 
   int blk_num;
   const unsigned int blksize = 1024;
   blk_num = (numX - 1)/blksize + 1;
   float *x_d, *y_d, *z_d;
-  float* Qr_d; 
-  float* Qi_d;
+  float *__restrict__ Qr_d; 
+  float *__restrict__ Qi_d;
   struct kValues *kVals_d;
   Timer timer;
 
@@ -165,16 +165,17 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   cudaMemcpy(kVals_d, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
 
   cudaDeviceSynchronize();
-  stopTime(&timer); printf("Coping data time: %f s\n", elapsedTime(timer)); 
+  stopTime(&timer); printf("Coping data to device time: %f s\n", elapsedTime(timer)); 
 
   // Launch a kernel
   printf("Launching kernel...\n"); fflush(stdout);
   startTime(&timer);
   cmpQ <<<blk_num, blksize>>> (numK, numX, kVals_d, x_d, y_d, z_d, Qr_d, Qi_d);
   cudaDeviceSynchronize();
-  stopTime(&timer); printf("ComputeQ_GPU: %f s\n", elapsedTime(timer));  
+  stopTime(&timer); printf("ComputeQ_GPU kernel time: %f s\n", elapsedTime(timer));  
 
   // Copy device variables to host
+  startTime(&timer);
   cudaMemcpy(Qr, Qr_d, sizeof(float)*numX, cudaMemcpyDeviceToHost   );
   cudaMemcpy(Qi, Qi_d, sizeof(float)*numX, cudaMemcpyDeviceToHost   );
   cudaDeviceSynchronize();
@@ -186,6 +187,6 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   cudaFree(kVals_d);
   cudaFree(Qr_d);
   cudaFree(Qi_d);
-
+  stopTime(&timer); printf("Copying data back time: %f s\n", elapsedTime(timer));  
 
 }
