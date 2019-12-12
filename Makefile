@@ -29,4 +29,4 @@ mri-q: main.o file.o args.o parboil.o computeQ2.o
 	$(CPP) $(APP_CXXFLAGS) $(OBJ) -o $(EXE) $(APP_LDFLAGS)
 
 clean:
-	rm -f *.o $(EXE) 
+	rm -f *.o mri-q
