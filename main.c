@@ -36,6 +36,11 @@
 #include "file.h"
 #include "computeQ.cc"
 //#include "computeQ2.cu"
+
+void ComputePhiMagCPU(int, float*, float*, float* __restrict__);
+void ComputeQCPU(int, int, struct kValues *, 
+float*, float*, float*, float *__restrict__, float *__restrict__);
+
 void ComputePhiMag_GPU(int, float*, float*, float* __restrict__);
 void ComputeQ_GPU(int, int, struct kValues *, 
 float*, float*, float*, float *__restrict__, float *__restrict__);
@@ -124,7 +129,9 @@ main (int argc, char *argv[]) {
   printf("\nCompute Q time:\n");
   pb_SwitchToTimer(&timer3, pb_TimerID_COMPUTE);
 
-  //ComputeQCPU(numK, numX, kVals, x, y, z, Qr, Qi);
+  // printf("\nUsing CPU...\n");
+  // ComputeQCPU(numK, numX, kVals, x, y, z, Qr, Qi);
+  printf("Using GPGPU...\n \n");
   ComputeQ_GPU(numK, numX, kVals, x, y, z, Qr, Qi);
 
   pb_SwitchToTimer(&timer3, pb_TimerID_NONE);
