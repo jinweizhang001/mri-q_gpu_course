@@ -27,7 +27,7 @@ struct kValues {
   float PhiMag;
 };
 
-__constant__ struct kValues kVals_c[3072];
+// __constant__ struct kValues kVals_c[3072];
 
 
 __global__ void SampleAll(int M, float* rPhi, float* iPhi, float* __restrict__ phiMag) {
@@ -91,47 +91,7 @@ extern "C" void ComputePhiMag_GPU(int numK, float* phiR, float* phiI,
 
 }
 
-__global__ void cmpQ(int numK, int numX, 
-  float* gx, float* gy, float* gz, 
-  float *__restrict__ Qr, float *__restrict__ Qi) {
-
-  // __shared__ float ds_kVals[sizeof(kVals)];
-
-  float expArg;
-  float cosArg;
-  float sinArg;
-  // find the index of voxel assigned to this thread
-  //threadIdx.x + blockDim.x * blockIdx.x;
-  int n = blockIdx.x * blockDim.x + threadIdx.x;
-
-  // register allocate voxel inputs and outputs
-  if(n < numX) {
-    float x = gx[n];
-    float y = gy[n];
-    float z = gz[n];
-    float Qracc = 0.0f;
-    float Qiacc = 0.0f;
-    // m is indexK
-    for(int m = 0; m < numK; m++) {
-      // better to store sample data kVals[] in constant memory
-      expArg = PIx2 * (kVals_c[m].Kx * x +
-                    kVals_c[m].Ky * y +
-                    kVals_c[m].Kz * z);
-
-      cosArg = cosf(expArg);
-      sinArg = sinf(expArg);
-      float phi = kVals_c[m].PhiMag;
-      Qracc += phi * cosArg;
-      Qiacc += phi * sinArg;
-
-    }
-    __syncthreads();
-    Qr[n] = Qracc;
-    Qi[n] = Qiacc;
-  }
-}
-
-// __global__ void cmpQ(int numK, int numX, struct kValues *kVals, 
+// __global__ void cmpQ(int numK, int numX, 
 //   float* gx, float* gy, float* gz, 
 //   float *__restrict__ Qr, float *__restrict__ Qi) {
 
@@ -154,13 +114,13 @@ __global__ void cmpQ(int numK, int numX,
 //     // m is indexK
 //     for(int m = 0; m < numK; m++) {
 //       // better to store sample data kVals[] in constant memory
-//       expArg = PIx2 * (kVals[m].Kx * x +
-//                     kVals[m].Ky * y +
-//                     kVals[m].Kz * z);
+//       expArg = PIx2 * (kVals_c[m].Kx * x +
+//                     kVals_c[m].Ky * y +
+//                     kVals_c[m].Kz * z);
 
 //       cosArg = cosf(expArg);
 //       sinArg = sinf(expArg);
-//       float phi = kVals[m].PhiMag;
+//       float phi = kVals_c[m].PhiMag;
 //       Qracc += phi * cosArg;
 //       Qiacc += phi * sinArg;
 
@@ -170,6 +130,72 @@ __global__ void cmpQ(int numK, int numX,
 //     Qi[n] = Qiacc;
 //   }
 // }
+
+__global__ void cmpQ(int numK, int numX, struct kValues *kVs, 
+  float* gx, float* gy, float* gz, 
+  float *__restrict__ Qr, float *__restrict__ Qi) {
+
+  // __shared__ struct kValues kVals[3072];
+
+  float expArg;
+  float cosArg;
+  float sinArg;
+  // find the index of voxel assigned to this thread
+  //threadIdx.x + blockDim.x * blockIdx.x;
+  int n = blockIdx.x * blockDim.x + threadIdx.x;
+
+  // for (int ii = 0; threadIdx.x + ii*blockDim.x < numK; ii++) {
+  
+  //   kVals[threadIdx.x + ii*blockDim.x] = kVs[threadIdx.x + ii*blockDim.x];
+    
+  // }
+  // __syncthreads();
+
+  // register allocate voxel inputs and outputs
+  if(n < numX) {
+    float x = gx[n];
+    float y = gy[n];
+    float z = gz[n];
+    float Qracc = 0.0f;
+    float Qiacc = 0.0f;
+    // m is indexK
+    
+    // if (n < numK) {
+    //   printf("%d: kVs.Ky = %f ; kVals.Ky = %f \n",n,kVs[n].Ky, kVals[n].Ky);
+    // }
+    
+    for(int m = 0; m < numK; m++) {
+      
+      // better to store sample data kVals[] in constant memory
+      expArg = PIx2 * (kVs[m].Kx * x +
+                    kVs[m].Ky * y +
+                    kVs[m].Kz * z);
+
+      
+      cosArg = cosf(expArg);
+      sinArg = sinf(expArg);
+      float phi = kVs[m].PhiMag;
+      Qracc += phi * cosArg;
+      Qiacc += phi * sinArg;
+      // if(n==2222) {
+      //   printf(" %d: kVs.Kz = %f ; kVals.Kz = %f \n",m,kVs[m].Kz, kVals[m].Kz);
+      // }
+
+    }
+    __syncthreads();
+    Qr[n] = Qracc;
+    Qi[n] = Qiacc;
+    // if(n==2222) {
+    //   printf(" %d: kVs.Ky = %f ; kVals.Ky = %f \n",n,kVs[n].Ky, kVals[n].Ky);
+    //   printf("Qr[n] = %f, Qi[n] = %f, %d \n",Qr[n], Qi[n],n);
+    // }
+  }
+  // printf("*******************************************************\n");
+  // if (n < numK) {
+  //   printf(" kVs.Ky = %f ; kVals.Ky = %f \n",kVs[n].Ky, kVals[n].Ky);
+    
+  // }
+}
 
 extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals, 
   float* x, float* y, float* z, 
@@ -181,7 +207,7 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   float *x_d, *y_d, *z_d;
   float *__restrict__ Qr_d; 
   float *__restrict__ Qi_d;
-  // struct kValues *kVals_d;
+  struct kValues *kVals_d;
   Timer timer;
 
   startTime(&timer);
@@ -190,7 +216,7 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   cudaMalloc((void**) &x_d, sizeof(float)*numX   );
   cudaMalloc((void**) &y_d, sizeof(float)*numX   );
   cudaMalloc((void**) &z_d, sizeof(float)*numX   );
-  // cudaMalloc((void**) &kVals_d, sizeof(struct kValues)*numK   );
+  cudaMalloc((void**) &kVals_d, sizeof(struct kValues)*numK   );
   cudaMalloc((void**) &Qr_d, sizeof(float)*numX   );
   cudaMalloc((void**) &Qi_d, sizeof(float)*numX   );
 
@@ -200,8 +226,8 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   cudaMemcpy(x_d, x, sizeof(float)*numX, cudaMemcpyHostToDevice   );
   cudaMemcpy(y_d, y, sizeof(float)*numX, cudaMemcpyHostToDevice   );
   cudaMemcpy(z_d, z, sizeof(float)*numX, cudaMemcpyHostToDevice   );
-  // cudaMemcpy(kVals_d, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
-  cudaMemcpyToSymbol(kVals_c, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
+  cudaMemcpy(kVals_d, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
+  // cudaMemcpyToSymbol(kVals_c, kVals, sizeof(struct kValues)*numK, cudaMemcpyHostToDevice);
 
   cudaDeviceSynchronize();
   stopTime(&timer); printf("Coping data to device time: %f s\n", elapsedTime(timer)); 
@@ -209,8 +235,8 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   // Launch a kernel
   printf("Launching kernel...\n"); fflush(stdout);
   startTime(&timer);
-  // cmpQ <<<blk_num, blksize>>> (numK, numX, kVals_d, x_d, y_d, z_d, Qr_d, Qi_d);
-  cmpQ <<<blk_num, blksize>>> (numK, numX, x_d, y_d, z_d, Qr_d, Qi_d);
+  cmpQ <<<blk_num, blksize>>> (numK, numX, kVals_d, x_d, y_d, z_d, Qr_d, Qi_d);
+  // cmpQ <<<blk_num, blksize>>> (numK, numX, x_d, y_d, z_d, Qr_d, Qi_d);
   cudaDeviceSynchronize();
   stopTime(&timer); printf("ComputeQ_GPU kernel time: %f s\n", elapsedTime(timer));  
 
@@ -224,8 +250,8 @@ extern "C" void ComputeQ_GPU(int numK, int numX, struct kValues *kVals,
   cudaFree(x_d);
   cudaFree(y_d);
   cudaFree(z_d);
-  // cudaFree(kVals_d);
-  cudaFree(kVals_c);
+  cudaFree(kVals_d);
+  // cudaFree(kVals_c);
   cudaFree(Qr_d);
   cudaFree(Qi_d);
   stopTime(&timer); printf("Copying data back time: %f s\n", elapsedTime(timer));  
